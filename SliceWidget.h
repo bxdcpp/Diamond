@@ -5,6 +5,7 @@
 #include <vtkActor2D.h>
 #include <vtkSmartPointer.h>
 
+class ThreeDWidget;
 class vtkRenderer;
 class vtkImageData;
 class vtkMatrix4x4;
@@ -19,6 +20,7 @@ public:
     ~SliceWidget();
     void SetType(SliceWindowType type);
     void SetImageData(vtkImageData* pImageData);
+    void SetThreeDWidget(ThreeDWidget* widget);
 
 private:
     void InitReSliceMatrx();
@@ -31,4 +33,5 @@ private:
     vtkSmartPointer<vtkMatrix4x4> m_presliceMatrix = nullptr;
     vtkSmartPointer<vtkTransform> m_presliceTransform = nullptr;
     std::shared_ptr<SliceImagePipeLine> m_pSliceImagePipeLine = nullptr;
+    ThreeDWidget* m_pThreeDWidget = nullptr;
 };

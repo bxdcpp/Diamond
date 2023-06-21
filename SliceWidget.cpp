@@ -1,5 +1,10 @@
 #include "SliceWidget.h"
 #include "ColorLookupTable.h"
+#include "ThreeDWidget.h"
+
+
+
+
 //VTK includes
 #include <vtkCylinderSource.h>
 #include <vtkConeSource.h>
@@ -106,6 +111,12 @@ void SliceWidget::SetImageData(vtkImageData * pImageData)
     m_pImgData = pImageData;
 
     InitReSliceMatrx();
+}
+
+void SliceWidget::SetThreeDWidget(ThreeDWidget* widget)
+{
+    m_pThreeDWidget = widget;
+
 }
 
 void SliceWidget::InitReSliceMatrx()
@@ -221,12 +232,12 @@ void SliceWidget::InitReSliceMatrx()
     case MPRA:
         m_presliceMatrix->DeepCopy(axialElements);
 
-        vtkMatrix4x4::Multiply4x4(m_presliceMatrix,dirMatrx4, m_presliceMatrix);
+        vtkMatrix4x4::Multiply4x4(dirMatrx4,m_presliceMatrix, m_presliceMatrix);
        // m_presliceTransform->SetMatrix(m_presliceMatrix);
         /*m_presliceTransform->Concatenate(m_pImgData->GetPhysicalToIndexMatrix());*/
-        m_presliceMatrix->SetElement(0, 3, origin[0]+spacing[0]*30);
-        m_presliceMatrix->SetElement(1, 3, origin[1]+ spacing[1] *30);
-        m_presliceMatrix->SetElement(2, 3, origin[2]+ spacing[2] * 30);
+        m_presliceMatrix->SetElement(0, 3, center[0]);
+        m_presliceMatrix->SetElement(1, 3, center[1]);
+        m_presliceMatrix->SetElement(2, 3, center[2]);
 
         //m_presliceTransform->SetMatrix(az);
         //m_presliceTransform->Translate(center);
@@ -291,6 +302,13 @@ void SliceWidget::InitReSliceMatrx()
 
 
     m_pRenderer->AddActor(m_pSliceImagePipeLine->m_pImageSliceActor);
+    if (m_pThreeDWidget)
+    {
+        m_pThreeDWidget->GetRenderer()->AddActor(m_pSliceImagePipeLine->m_pImageSliceActor);
+        m_pThreeDWidget->GetRenderer()->ResetCamera();
+        m_pThreeDWidget->renderWindow()->Render();
+    }
+    
 
     /*viewforward[0] = m_presliceMatrix->Element[0][2];
     viewforward[1] = m_presliceMatrix->Element[1][2];
@@ -309,8 +327,7 @@ void SliceWidget::InitReSliceMatrx()
     m_pRenderer->GetActiveCamera()->SetViewUp(viewup);*/
 
     m_pRenderer->ResetCamera();
-    //m_pRenderer->GetActiveCamera()->
-
+  
     renderWindow()->Render();
 
 }

@@ -13,6 +13,7 @@ public:
     ThreeDWidget(QWidget *parent = nullptr);
     ~ThreeDWidget();
     void SetImageData(vtkImageData* pImgData);
+    vtkSmartPointer<vtkRenderer> GetRenderer();
 private:
 
     void RenderVolume();

@@ -51,6 +51,11 @@ void ThreeDWidget::SetImageData(vtkImageData * pImgData)
     RenderVolume();
 }
 
+vtkSmartPointer<vtkRenderer> ThreeDWidget::GetRenderer()
+{
+    return m_pRenderer;
+}
+
 void ThreeDWidget::RenderVolume()
 {
     vtkSmartPointer<vtkImageCast> cast = vtkSmartPointer<vtkImageCast>::New();

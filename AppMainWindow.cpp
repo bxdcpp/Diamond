@@ -51,9 +51,14 @@ void AppMainWindow::onLoadData()
     vtkSmartPointer<vtkImageData> pImgData = vtkSmartPointer<vtkImageData>::New();
     if (vtkImageDataIO::readImageDataFromNiiGz(path.toStdString(), pImgData.Get()))
     {
+        ui->sliceA->SetThreeDWidget(ui->threeDWidget);
+        ui->sliceC->SetThreeDWidget(ui->threeDWidget);
+        ui->sliceS->SetThreeDWidget(ui->threeDWidget);
+
         ui->sliceA->SetImageData(pImgData);
         ui->sliceC->SetImageData(pImgData);
         ui->sliceS->SetImageData(pImgData);
+    
         ui->threeDWidget->SetImageData(pImgData);
     }
 
