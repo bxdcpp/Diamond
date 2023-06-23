@@ -6,11 +6,14 @@
 #include <QFileDialog>
 #include <QStandardPaths>
 #include <QToolButton>
+#include <QDebug>
 //#include <QAppDesktop>
 
 #include <vtkImageData.h>
 #include <vtkMatrix3x3.h>
 #include <vtkImageChangeInformation.h>
+#include <vtkRenderer.h>
+#include <vtkCamera.h>
 
 AppMainWindow::AppMainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -19,11 +22,32 @@ AppMainWindow::AppMainWindow(QWidget *parent)
     ui->setupUi(this);
     InitMPRWidget();
     QObject::connect(ui->LoadBtn, SIGNAL(clicked(bool)), this, SLOT(onLoadData()));
+    QObject::connect(ui->TestBtn, SIGNAL(clicked(bool)), this, SLOT(onTest()));
 }
 
 AppMainWindow::~AppMainWindow()
 {
     delete ui;
+}
+
+void AppMainWindow::onTest()
+{
+    auto renderer = ui->sliceA->GetRenderer();
+    auto camera = renderer->GetActiveCamera();
+    double pos[3]{ 0 };
+    camera->GetPosition(pos);
+    qDebug() << "pos:" << QString("(%1,%2,%3)").arg(pos[0]).arg(pos[1]).arg(pos[2]);
+    double fpoint[3]{ 0 };
+    double viewUp[3]{ 0 };
+    camera->GetFocalPoint(fpoint);
+    camera->GetViewUp(viewUp);
+    double s = camera->GetParallelScale();
+    qDebug() << camera->GetViewAngle();
+    qDebug() << "GetViewUp:" << QString("(%1,%2,%3)").arg(viewUp[0]).arg(viewUp[1]).arg(viewUp[2]);
+    qDebug() << "GetFocalPoint:" << QString("(%1,%2,%3)").arg(fpoint[0]).arg(fpoint[1]).arg(fpoint[2]);
+    qDebug() << "ParallelScale:" << QString("(%1)").arg(s);
+    renderer->ResetCamera();
+
 }
 
 void AppMainWindow::InitMPRWidget()
@@ -59,7 +83,7 @@ void AppMainWindow::onLoadData()
         ui->sliceC->SetImageData(pImgData);
         ui->sliceS->SetImageData(pImgData);
     
-        ui->threeDWidget->SetImageData(pImgData);
+        //ui->threeDWidget->SetImageData(pImgData);
     }
 
 

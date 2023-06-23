@@ -11,6 +11,7 @@ class vtkImageData;
 class vtkMatrix4x4;
 class vtkTransform;
 class SliceImagePipeLine;
+class SliceImagePipeLine2;
 class SliceWidget : public QVTKOpenGLNativeWidget
 {
     Q_OBJECT
@@ -21,10 +22,12 @@ public:
     void SetType(SliceWindowType type);
     void SetImageData(vtkImageData* pImageData);
     void SetThreeDWidget(ThreeDWidget* widget);
+    vtkSmartPointer<vtkRenderer> GetRenderer();
 
 private:
     void InitReSliceMatrx();
-    void RenderCone();
+    void ResetResliceMatrix();
+    void Test();
 private:
     SliceWindowType m_eSliceType = Empty;
     //vtkSmartPointer<vtkActor2D> m_pActor2D = nullptr;
@@ -34,4 +37,9 @@ private:
     vtkSmartPointer<vtkTransform> m_presliceTransform = nullptr;
     std::shared_ptr<SliceImagePipeLine> m_pSliceImagePipeLine = nullptr;
     ThreeDWidget* m_pThreeDWidget = nullptr;
+
+
+    double m_center[3];
+    double m_viewUp[3];
+    double m_viewNormal[3];
 };

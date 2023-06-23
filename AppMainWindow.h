@@ -14,6 +14,7 @@ public:
 
 protected slots:
     void onLoadData();
+    void onTest();
 
 private:
     void InitMPRWidget();
