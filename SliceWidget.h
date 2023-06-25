@@ -28,6 +28,7 @@ private:
     void InitReSliceMatrx();
     void ResetResliceMatrix();
     void Test();
+	void InitCamera(double center[3], double scale);
 private:
     SliceWindowType m_eSliceType = Empty;
     //vtkSmartPointer<vtkActor2D> m_pActor2D = nullptr;

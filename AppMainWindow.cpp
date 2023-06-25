@@ -83,7 +83,7 @@ void AppMainWindow::onLoadData()
         ui->sliceC->SetImageData(pImgData);
         ui->sliceS->SetImageData(pImgData);
     
-        //ui->threeDWidget->SetImageData(pImgData);
+        ui->threeDWidget->SetImageData(pImgData);
     }
 
 

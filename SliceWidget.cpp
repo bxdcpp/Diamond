@@ -326,12 +326,12 @@ void SliceWidget::InitReSliceMatrx()
 
 
     m_pRenderer->AddActor(m_pSliceImagePipeLine->m_pImageSliceActor);
-   /* if (m_pThreeDWidget)
+    if (m_pThreeDWidget)
     {
         m_pThreeDWidget->GetRenderer()->AddActor(m_pSliceImagePipeLine->m_pImageSliceActor);
         m_pThreeDWidget->GetRenderer()->ResetCamera();
         m_pThreeDWidget->renderWindow()->Render();
-    }*/
+    }
     
 
     /*viewforward[0] = m_presliceMatrix->Element[0][2];
@@ -351,27 +351,27 @@ void SliceWidget::InitReSliceMatrx()
     m_pRenderer->GetActiveCamera()->SetViewUp(viewup);*/
 
     
+	InitCamera(center, yd);
 
+    //auto camera = m_pRenderer->GetActiveCamera();
 
-    auto camera = m_pRenderer->GetActiveCamera();
+    //camera->ParallelProjectionOn();
+    //camera->SetViewAngle(30.0);
 
-    camera->ParallelProjectionOn();
-    camera->SetViewAngle(30.0);
-
-    double distance = camera->GetDistance();
-    distance = 1;
-    double focalPoint[3];
-    //camera->GetParallelProjection();
-    camera->GetFocalPoint(focalPoint);
-    camera->SetParallelScale(0.5f * yd);
-    
-    double cameraPositon[3]{ center[0] + 0 * distance,
-                          center[1] + 0 * distance,
-                          center[2]  -1 * distance };
-    camera->SetPosition(cameraPositon);
-    camera->SetFocalPoint(center);
-    camera->SetViewUp(0, -1, 0);
-    //camera->SetParallelScale(0.5);
+    //double distance = camera->GetDistance();
+    //distance = 1;
+    //double focalPoint[3];
+    ////camera->GetParallelProjection();
+    //camera->GetFocalPoint(focalPoint);
+    //camera->SetParallelScale(0.5f * yd);
+    //
+    //double cameraPositon[3]{ center[0] + 0 * distance,
+    //                      center[1] + 0 * distance,
+    //                      center[2]  -1 * distance };
+    //camera->SetPosition(cameraPositon);
+    //camera->SetFocalPoint(center);
+    //camera->SetViewUp(0, -1, 0);
+    ////camera->SetParallelScale(0.5);
 
   
     m_presliceMatrix->Print(std::cout);
@@ -569,4 +569,50 @@ void SliceWidget::Test()
         dirMatrx4->Print(std::cout);
     }
     image->GetPhysicalToIndexMatrix()->Print(std::cout);
+}
+
+void SliceWidget::InitCamera(double center[3],double scale)
+{
+	auto camera = m_pRenderer->GetActiveCamera();
+
+	camera->ParallelProjectionOn();
+	camera->SetViewAngle(30.0);
+
+	double distance = 100;
+
+	double focalPoint[3]{0};
+	double cameraPositon[3]{ 0 };
+	//camera->GetParallelProjection();
+	camera->GetFocalPoint(focalPoint);
+	camera->SetParallelScale(0.5f * scale);
+
+
+	switch (m_eSliceType)
+	{
+	case MPRA:
+		cameraPositon[0] = center[0] + 0 * distance;
+		cameraPositon[1] = center[1] + 0 * distance;
+		cameraPositon[2] = center[2] - 1 * distance;
+		camera->SetPosition(cameraPositon);
+		camera->SetFocalPoint(center);
+		camera->SetViewUp(0, -1, 0);
+		break;
+		
+	case MPRC:
+		cameraPositon[0] = center[0] + 0 * distance;
+		cameraPositon[1] = center[1] + 1 * distance;
+		cameraPositon[2] = center[2] + 0 * distance;
+		camera->SetPosition(cameraPositon);
+		camera->SetFocalPoint(center);
+		camera->SetViewUp(0, 0, 1);
+		break;
+	case MPRS:
+		cameraPositon[0] = center[0] + 1 * distance;
+		cameraPositon[1] = center[1] + 0 * distance;
+		cameraPositon[2] = center[2] + 0 * distance;
+		camera->SetPosition(cameraPositon);
+		camera->SetFocalPoint(center);
+		camera->SetViewUp(0, 0, 1);
+		break;
+	}
 }

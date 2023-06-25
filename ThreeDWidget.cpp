@@ -33,7 +33,7 @@ ThreeDWidget::ThreeDWidget(QWidget *parent)
     vtkImageDataIO::readImageDataFromNiiGz(std::string("S:/2_CT.nii.gz"), img);*/
     m_pRenderer = vtkSmartPointer<vtkRenderer>::New();
     renderWindow()->AddRenderer(m_pRenderer);
-    //AddAxes();
+    AddAxes();
 }
 
 ThreeDWidget::~ThreeDWidget()
