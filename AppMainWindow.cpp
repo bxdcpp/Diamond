@@ -23,6 +23,7 @@ AppMainWindow::AppMainWindow(QWidget *parent)
     InitMPRWidget();
     QObject::connect(ui->LoadBtn, SIGNAL(clicked(bool)), this, SLOT(onLoadData()));
     QObject::connect(ui->TestBtn, SIGNAL(clicked(bool)), this, SLOT(onTest()));
+	QObject::connect(ui->VisibleBtn, SIGNAL(clicked(bool)), this, SLOT(onVisible()));
 }
 
 AppMainWindow::~AppMainWindow()
@@ -42,12 +43,17 @@ void AppMainWindow::onTest()
     camera->GetFocalPoint(fpoint);
     camera->GetViewUp(viewUp);
     double s = camera->GetParallelScale();
-    qDebug() << camera->GetViewAngle();
+    qDebug() <<"GetViewAngle:" << camera->GetViewAngle();
     qDebug() << "GetViewUp:" << QString("(%1,%2,%3)").arg(viewUp[0]).arg(viewUp[1]).arg(viewUp[2]);
     qDebug() << "GetFocalPoint:" << QString("(%1,%2,%3)").arg(fpoint[0]).arg(fpoint[1]).arg(fpoint[2]);
     qDebug() << "ParallelScale:" << QString("(%1)").arg(s);
-    renderer->ResetCamera();
+    //renderer->ResetCamera();
 
+}
+
+void AppMainWindow::onVisible()
+{
+	ui->threeDWidget->SetVolumeVisible();
 }
 
 void AppMainWindow::InitMPRWidget()
@@ -79,6 +85,11 @@ void AppMainWindow::onLoadData()
         ui->sliceC->SetThreeDWidget(ui->threeDWidget);
         ui->sliceS->SetThreeDWidget(ui->threeDWidget);
 
+		/*vtkNew<vtkImageChangeInformation> changeInfo;
+		changeInfo->Setoup*/
+	/*	vtkNew<vtkMatrix3x3> dirMat;
+		dirMat->Identity();
+		pImgData->SetDirectionMatrix(dirMat);*/
         ui->sliceA->SetImageData(pImgData);
         ui->sliceC->SetImageData(pImgData);
         ui->sliceS->SetImageData(pImgData);

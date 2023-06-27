@@ -19,6 +19,7 @@
 #include <vtkImageData.h>
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkAxesActor.h>
+#include <vtkCamera.h>
 
 
 #include <QDebug>
@@ -81,12 +82,13 @@ void ThreeDWidget::RenderVolume()
 
     vtkSmartPointer<vtkPiecewiseFunction> compositeOpacity = vtkSmartPointer<vtkPiecewiseFunction>::New();
     //Defines a piecewise function mapping.
-   /* compositeOpacity->AddPoint(60, 0.00);
+    compositeOpacity->AddPoint(60, 0.00);
     compositeOpacity->AddPoint(140, 0.40);
-    compositeOpacity->AddPoint(180, 0.90);*/
+    compositeOpacity->AddPoint(180, 0.90);
 
-    compositeOpacity->AddPoint(0, 0.00);
-    compositeOpacity->AddPoint(1024, 1.0);
+   /* compositeOpacity->AddPoint(-100, 0.0);
+	compositeOpacity->AddPoint(300, 0.5);
+    compositeOpacity->AddPoint(1024, 1.0);*/
 
 
     volumeProperty->SetScalarOpacity(compositeOpacity);
@@ -99,14 +101,43 @@ void ThreeDWidget::RenderVolume()
 
     //volumeProperty->SetColor(color);
 
-    vtkSmartPointer<vtkVolume> volume = vtkSmartPointer<vtkVolume>::New();
+    m_volume = vtkSmartPointer<vtkVolume>::New();
     //represents a volume(data & properties) in a rendered scene
-    volume->SetMapper(volumeMapperGpu);
-    volume->SetProperty(volumeProperty);
-   
+	m_volume->SetMapper(volumeMapperGpu);
+	m_volume->SetProperty(volumeProperty);
+    m_pRenderer->AddVolume(m_volume);
 
-    m_pRenderer->AddVolume(volume);
-    renderWindow()->Render();
+	/*int extent[6]{ 0 };
+	double spacing[3];
+	double origin[3];
+	double center[3]{ 0 };
+	m_pImageData->GetExtent(extent);
+	m_pImageData->GetSpacing(spacing);
+	m_pImageData->GetOrigin(origin);
+
+	center[0] = origin[0] + spacing[0] * 0.5 * (extent[0] + extent[1]);
+	center[1] = origin[1] + spacing[1] * 0.5 * (extent[2] + extent[3]);
+	center[2] = origin[2] + spacing[2] * 0.5 * (extent[4] + extent[5]);
+	double dz = (extent[5] - extent[4] + 1)*spacing[2];
+
+	auto camera = m_pRenderer->GetActiveCamera();
+	camera->SetParallelProjection(true);
+	double viewup[3]{ 0,0,1 };
+	double dirvec[3]{ 0,1,0 };
+	double cameraPositon[3]{ 0,0,0 };
+	double distance = 100;
+	camera->SetViewUp(viewup);
+
+	camera->SetParallelScale(0.5f * dz);
+	cameraPositon[0] = center[0] + dirvec[0] * distance;
+	cameraPositon[1] = center[1] + dirvec[1] * distance;
+	cameraPositon[2] = center[2] + dirvec[2] * distance;
+	camera->SetPosition(cameraPositon);
+	camera->SetFocalPoint(center);
+	camera->SetViewUp(viewup[0], viewup[1], viewup[2]);
+
+    renderWindow()->Render();*/
+	ResetView();
 }
 
 void ThreeDWidget::AddAxes()
@@ -125,4 +156,29 @@ void ThreeDWidget::AddAxes()
     m_pmarkWidget->SetInteractor(renderWindow()->GetInteractor());
     m_pmarkWidget->On();
     renderWindow()->Render();
+}
+
+
+void ThreeDWidget::ResetView()
+{
+	m_pRenderer->GetActiveCamera()->SetViewUp(0, 0, 1);
+	m_pRenderer->GetActiveCamera()->SetPosition(0, -1, 0);
+	m_pRenderer->GetActiveCamera()->SetFocalPoint(0, 0, 0);
+	m_pRenderer->GetActiveCamera()->ComputeViewPlaneNormal();
+	m_pRenderer->ResetCamera();
+	renderWindow()->Render();
+}
+
+void ThreeDWidget::SetVolumeVisible()
+{
+	qDebug() << "SetVolumeVisible" ;
+	if (m_volume->GetVisibility())
+	{
+		m_volume->SetVisibility(false);
+	}
+	else
+	{
+		m_volume->SetVisibility(true);
+	}
+	renderWindow()->Render();
 }

@@ -1,6 +1,6 @@
 #pragma once
 #include "CommonDef.h"
-
+   
 #include <QVTKOpenGLNativeWidget.h>
 #include <vtkActor2D.h>
 #include <vtkSmartPointer.h>
@@ -28,7 +28,11 @@ private:
     void InitReSliceMatrx();
     void ResetResliceMatrix();
     void Test();
-	void InitCamera(double center[3], double scale);
+	void InitCamera(double center[3], double scale,vtkMatrix4x4* dirMat);
+	void InitCamera2(double center[3], double scale);
+	void GetSliceToWorldOrientation(vtkMatrix4x4* sliceToWorld);
+	void InitMRHeadCamera(double center[3], double scale);
+	void AddSphere(vtkRenderer* renderer, double pos[3],double c[3],vtkMatrix4x4* userM4 = nullptr);
 private:
     SliceWindowType m_eSliceType = Empty;
     //vtkSmartPointer<vtkActor2D> m_pActor2D = nullptr;

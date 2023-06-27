@@ -30,6 +30,7 @@
 #include <vtkImageViewer2.h>
 #include <vtkMatrix3x3.h>
 #include <vtkPlaneSource.h>
+#include <vtkSphereSource.h>
 
 class SliceImagePipeLine
 {
@@ -39,17 +40,17 @@ public:
         m_pImageReslice = vtkSmartPointer<vtkImageReslice>::New();
         m_pImageReslice->SetOutputDimensionality(2);
         m_pImageReslice->SetInterpolationModeToLinear();
-        m_pImageReslice->SetBackgroundLevel(-1024);
-        //m_pImageReslice->AutoCropOutputOn();
+        m_pImageReslice->SetBackgroundLevel(0);
+        m_pImageReslice->AutoCropOutputOn();
         m_pImageReslice->SetResliceAxes(pReSliceMatrix);
         m_pImageReslice->SetInputData(pImageData);
         //m_pImageReslice->SetOutputOrigin(origin);
-       m_pImageReslice->SetResliceTransform(pTransform);
+       //m_pImageReslice->SetResliceTransform(pTransform);
 
         m_pImageMapToWindowLevelColors = vtkSmartPointer<vtkImageMapToWindowLevelColors>::New();
         m_pImageMapToWindowLevelColors->SetInputConnection(m_pImageReslice->GetOutputPort());
         m_pImageMapToWindowLevelColors->SetWindow(1000);
-        m_pImageMapToWindowLevelColors->SetLevel(100);
+        m_pImageMapToWindowLevelColors->SetLevel(360);
 
         m_pImgMapToColors = vtkSmartPointer<vtkImageMapToColors>::New();
         vtkSmartPointer<vtkLookupTable> pLookupTable = vtkSmartPointer<vtkLookupTable>::New();
@@ -70,6 +71,9 @@ public:
         m_pImageSliceActor = vtkSmartPointer<vtkImageActor>::New();
         m_pImageSliceActor->GetMapper()->SetInputConnection(m_pImgMapToColors->GetOutputPort());
         m_pImageSliceActor->SetUserMatrix(pReSliceMatrix);
+		actorImageIn3D = vtkSmartPointer< vtkImageActor>::New();
+		actorImageIn3D->GetMapper()->SetInputConnection(m_pImgMapToColors->GetOutputPort());
+		actorImageIn3D->SetUserMatrix(pReSliceMatrix);
         double pos[3]{ 0 };
         m_pImageSliceActor->GetPosition(pos);
         m_pImageSliceActor->GetMatrix()->Print(std::cout);
@@ -85,6 +89,7 @@ public:
     vtkSmartPointer<vtkImageMapper> m_pImgMapper = nullptr;
     //vtkSmartPointer<vtkActor2D> m_pImageSliceActor = nullptr;
     vtkSmartPointer< vtkImageActor> m_pImageSliceActor = nullptr;
+	vtkSmartPointer< vtkImageActor> actorImageIn3D = nullptr;
 
 
 
@@ -94,11 +99,12 @@ SliceWidget::SliceWidget(QWidget *parent)
     :QVTKOpenGLNativeWidget(parent)
 {
     m_pRenderer = vtkSmartPointer<vtkRenderer>::New();
-    m_pRenderer->SetBackground(0, 0, 0);
+    //m_pRenderer->SetBackground(135/255.0, 206/255.0, 235/255.0);
+	m_pRenderer->SetBackground(0, 0.0, 0.0);
     renderWindow()->AddRenderer(m_pRenderer);
     
-    vtkSmartPointer<vtkInteractorStyleImage> pImageStyle = vtkSmartPointer<vtkInteractorStyleImage>::New();
-    renderWindow()->GetInteractor()->SetInteractorStyle(pImageStyle);
+  /*  vtkSmartPointer<vtkInteractorStyleImage> pImageStyle = vtkSmartPointer<vtkInteractorStyleImage>::New();
+    renderWindow()->GetInteractor()->SetInteractorStyle(pImageStyle);*/
     //vtkNew<vtkRenderWindowInteractor> WindowInteractor;
     //WindowInteractor->SetRenderWindow(renderWindow());
     //WindowInteractor->SetInteractorStyle(pImageStyle);
@@ -117,7 +123,7 @@ void SliceWidget::SetType(SliceWindowType type)
 void SliceWidget::SetImageData(vtkImageData * pImageData)
 {
     m_pImgData = pImageData;
-    Test();
+    //Test();
     InitReSliceMatrx();
 }
 
@@ -162,20 +168,20 @@ void SliceWidget::InitReSliceMatrx()
     };*/
 
 
-    //Öá×´¾ØÕó
-   /* double axialElements[16] = {
+    //ï¿½ï¿½×´ï¿½ï¿½ï¿½ï¿½
+    double axialElements[16] = {
         1, 0, 0, 0,
         0, -1, 0, 0,
         0, 0, -1, 0,
         0, 0, 0, 1
-    };*/
-    double axialElements[16] = {
+    };
+   /* double axialElements[16] = {
      1, 0, 0, 0,
      0, 1, 0, 0,
      0, 0, 1, 0,
      0, 0, 0, 1
-    };
-    //Ê¸×´¾ØÕó
+    };*/
+    //Ê¸×´ï¿½ï¿½ï¿½ï¿½
    /* double sagittalElements[16] = {
         0, 0, -1, 0,
         1, 0, 0, 0,
@@ -187,7 +193,7 @@ void SliceWidget::InitReSliceMatrx()
     1, 0, 0, 0,
     0, 1, 0, 0,
     0, 0, 0, 1 };
-    //¹Ú×´¾ØÕó
+    //ï¿½ï¿½×´ï¿½ï¿½ï¿½ï¿½
     double coronalElements[16] = {
         1, 0, 0, 0,
         0, 0, -1, 0,
@@ -267,10 +273,14 @@ void SliceWidget::InitReSliceMatrx()
         {
             dirMatrx4->SetElement(i, j, pDirMatrx->GetElement(i, j));
         }
-        //dirMatrx4->SetElement(i, 3, center[i]);
+        dirMatrx4->SetElement(i, 3, center[i]);
     }
    //dirMatrx4->Invert();
-    
+	std::cout << "dirrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr" << std::endl;
+	dirMatrx4->Print(std::cout);
+
+	vtkNew<vtkMatrix4x4> dirInvert;
+	vtkMatrix4x4::Invert(dirMatrx4, dirInvert);
    //ResetResliceMatrix();
     switch (m_eSliceType)
     {
@@ -279,25 +289,51 @@ void SliceWidget::InitReSliceMatrx()
     case VR3D1:
         break;
     case MPRA:
-        m_presliceMatrix->DeepCopy(axialElements);
+#if 1
+		m_presliceMatrix->DeepCopy(axialElements);
+		vtkMatrix4x4::Multiply4x4(dirInvert, m_presliceMatrix, m_presliceMatrix);
+	/*	vtkMatrix4x4::Multiply4x4(m_presliceMatrix, dirMatrx4, m_presliceMatrix);*/
+		m_presliceMatrix->SetElement(0, 3, center[0]);
+		m_presliceMatrix->SetElement(1, 3, center[1]);
+		m_presliceMatrix->SetElement(2, 3, center[2]);
+#else
+		m_presliceMatrix->DeepCopy(axialElements);
         m_presliceTransform->SetMatrix(m_presliceMatrix);
-        m_presliceTransform->Concatenate(dirMatrx4);
-        m_presliceTransform->Translate(center[0], center[1], center[2]);
+        //m_presliceTransform->Concatenate(dirMatrx4);
+		m_presliceTransform->Translate(center[0], center[1], center[2]);
         m_presliceTransform->Update();
         m_presliceMatrix->DeepCopy(m_presliceTransform->GetMatrix());
 
+#endif
         break;
     case MPRC:
+#if 1
+		m_presliceMatrix->DeepCopy(coronalElements);
+		vtkMatrix4x4::Multiply4x4(dirInvert, m_presliceMatrix, m_presliceMatrix);
+	/*	vtkMatrix4x4::Multiply4x4(m_presliceMatrix, dirMatrx4, m_presliceMatrix);*/
+
+		m_presliceMatrix->SetElement(0, 3, center[0]);
+		m_presliceMatrix->SetElement(1, 3, center[1]);
+		m_presliceMatrix->SetElement(2, 3, center[2]);
+#else
         m_presliceMatrix->DeepCopy(coronalElements);
         m_presliceTransform->SetMatrix(m_presliceMatrix);
-        m_presliceTransform->Concatenate(dirMatrx4);
+        //m_presliceTransform->Concatenate(dirMatrx4);
         m_presliceTransform->Translate(center[0], center[1], center[2]);
      
         m_presliceTransform->Update();
         m_presliceMatrix->DeepCopy(m_presliceTransform->GetMatrix());
-    
+#endif
         break;
     case MPRS:
+#if 1
+		m_presliceMatrix->DeepCopy(sagittalElements);
+		vtkMatrix4x4::Multiply4x4(dirInvert, m_presliceMatrix, m_presliceMatrix);
+		/*vtkMatrix4x4::Multiply4x4(m_presliceMatrix, dirMatrx4, m_presliceMatrix);*/
+		m_presliceMatrix->SetElement(0, 3, center[0]);
+		m_presliceMatrix->SetElement(1, 3, center[1]);
+		m_presliceMatrix->SetElement(2, 3, center[2]);
+#else
         m_presliceMatrix->DeepCopy(sagittalElements);
         m_presliceTransform->SetMatrix(m_presliceMatrix);
         m_presliceTransform->Concatenate(dirMatrx4);
@@ -305,7 +341,7 @@ void SliceWidget::InitReSliceMatrx()
 
         m_presliceTransform->Update();
         m_presliceMatrix->DeepCopy(m_presliceTransform->GetMatrix());
-
+#endif
         break;
     case CPR1:
         break;
@@ -322,14 +358,17 @@ void SliceWidget::InitReSliceMatrx()
     if (!m_pSliceImagePipeLine)
     {
         m_pSliceImagePipeLine = std::make_shared<SliceImagePipeLine>(m_pImgData,m_presliceMatrix, sliceTransform,center);
+		double color[3]{ 0,0,1 };
+		double pos[3]{ 0 };
+		AddSphere(m_pRenderer, pos, color, m_presliceMatrix);
     }
 
 
     m_pRenderer->AddActor(m_pSliceImagePipeLine->m_pImageSliceActor);
     if (m_pThreeDWidget)
     {
-        m_pThreeDWidget->GetRenderer()->AddActor(m_pSliceImagePipeLine->m_pImageSliceActor);
-        m_pThreeDWidget->GetRenderer()->ResetCamera();
+        m_pThreeDWidget->GetRenderer()->AddActor(m_pSliceImagePipeLine->actorImageIn3D);
+        //m_pThreeDWidget->GetRenderer()->ResetCamera();
         m_pThreeDWidget->renderWindow()->Render();
     }
     
@@ -350,8 +389,12 @@ void SliceWidget::InitReSliceMatrx()
     m_pRenderer->GetActiveCamera()->SetPosition(cameraPositon);
     m_pRenderer->GetActiveCamera()->SetViewUp(viewup);*/
 
+
     
-	InitCamera(center, yd);
+	InitCamera(center, yd,dirInvert);
+
+	//InitCamera2(center, yd);
+	//InitMRHeadCamera(center, yd);
 
     //auto camera = m_pRenderer->GetActiveCamera();
 
@@ -374,12 +417,11 @@ void SliceWidget::InitReSliceMatrx()
     ////camera->SetParallelScale(0.5);
 
   
-    m_presliceMatrix->Print(std::cout);
+    m_presliceMatrix->Print(std:: cout);
    /* m_pRenderer->ComputeVisiblePropBounds();
     m_pRenderer->ResetCameraClippingRange();*/
 
-    //m_pRenderer->ResetCamera();
-    m_pRenderer->Render();
+   //m_pRenderer->ResetCamera();
     renderWindow()->Render();
 
 }
@@ -571,8 +613,15 @@ void SliceWidget::Test()
     image->GetPhysicalToIndexMatrix()->Print(std::cout);
 }
 
-void SliceWidget::InitCamera(double center[3],double scale)
+void SliceWidget::InitCamera(double center[3],double scale, vtkMatrix4x4* dirMat)
 {
+	int extent[6]{ 0 };
+	m_pImgData->GetExtent(extent);
+	double sp[3];
+	m_pImgData->GetSpacing(sp);
+	double dx = (extent[1] - extent[0] + 1) * sp[0];
+	double dy = (extent[3] - extent[2] + 1) * sp[1];
+	double dz = (extent[5] - extent[4] + 1)*sp[2];
 	auto camera = m_pRenderer->GetActiveCamera();
 
 	camera->ParallelProjectionOn();
@@ -584,35 +633,351 @@ void SliceWidget::InitCamera(double center[3],double scale)
 	double cameraPositon[3]{ 0 };
 	//camera->GetParallelProjection();
 	camera->GetFocalPoint(focalPoint);
-	camera->SetParallelScale(0.5f * scale);
 
+	double viewup[4]{ 0,-1,0,0};
+	double dirvec[4]{ 0,0,-1,0};
+	/*vtkNew<vtkMatrix4x4> sliceToWorld;
+	GetSliceToWorldOrientation(sliceToWorld);
+	sliceToWorld->MultiplyPoint(viewup, viewup);
+	sliceToWorld->MultiplyPoint(dirvec, dirvec);
+	camera->SetParallelScale(0.5f * dz);
+	cameraPositon[0] = center[0] + dirvec[0] * distance;
+	cameraPositon[1] = center[1] + dirvec[1] * distance;
+	cameraPositon[2] = center[2] + dirvec[2] * distance;
+	camera->SetPosition(cameraPositon);
+	camera->SetFocalPoint(center);
+	camera->SetViewUp(viewup[0], viewup[1], viewup[2]);*/
 
 	switch (m_eSliceType)
 	{
 	case MPRA:
-		cameraPositon[0] = center[0] + 0 * distance;
-		cameraPositon[1] = center[1] + 0 * distance;
-		cameraPositon[2] = center[2] - 1 * distance;
+		viewup[0] = 0;
+		viewup[1] = -1;
+		viewup[2] = 0;
+
+		dirvec[0] = 0;
+		dirvec[1] = 0;
+		dirvec[2] = -1;
+
+		dirMat->MultiplyPoint(viewup, viewup);
+		dirMat->MultiplyPoint(dirvec, dirvec);
+
+		camera->SetParallelScale(0.5f * dy);
+		cameraPositon[0] = center[0] + dirvec[0] * distance;
+		cameraPositon[1] = center[1] + dirvec[1] * distance;
+		cameraPositon[2] = center[2] + dirvec[2] * distance;
 		camera->SetPosition(cameraPositon);
 		camera->SetFocalPoint(center);
-		camera->SetViewUp(0, -1, 0);
+		camera->SetViewUp(viewup[0], viewup[1], viewup[2]);
+
+		if (m_pThreeDWidget)
+		{
+			double c[3]{ 0,1,0 };
+			double c2[3]{ 1,0,0 };
+			AddSphere(m_pThreeDWidget->GetRenderer(), cameraPositon, c);
+			AddSphere(m_pThreeDWidget->GetRenderer(), center, c2);
+
+			/*AddSphere(m_pRenderer, cameraPositon, c);
+			AddSphere(m_pRenderer, center, c2);*/
+
+			m_pThreeDWidget->renderWindow()->Render();
+		}
+
+
 		break;
 		
 	case MPRC:
-		cameraPositon[0] = center[0] + 0 * distance;
-		cameraPositon[1] = center[1] + 1 * distance;
-		cameraPositon[2] = center[2] + 0 * distance;
+		viewup[0] = 0;
+		viewup[1] = 0;
+		viewup[2] = 1;
+
+		dirvec[0] = 0;
+		dirvec[1] = 1;
+		dirvec[2] = 0;
+
+		dirMat->MultiplyPoint(viewup, viewup);
+		dirMat->MultiplyPoint(dirvec, dirvec);
+
+		camera->SetParallelScale(0.5f * dz);
+		cameraPositon[0] = center[0] + dirvec[0] * distance;
+		cameraPositon[1] = center[1] + dirvec[1] * distance;
+		cameraPositon[2] = center[2] + dirvec[2] * distance;
 		camera->SetPosition(cameraPositon);
 		camera->SetFocalPoint(center);
-		camera->SetViewUp(0, 0, 1);
+		camera->SetViewUp(viewup[0], viewup[1], viewup[2]);
 		break;
 	case MPRS:
-		cameraPositon[0] = center[0] + 1 * distance;
-		cameraPositon[1] = center[1] + 0 * distance;
-		cameraPositon[2] = center[2] + 0 * distance;
+		viewup[0] = 0;
+		viewup[1] = 0;
+		viewup[2] = 1;
+
+		dirvec[0] = 1;
+		dirvec[1] = 0;
+		dirvec[2] = 0;
+
+		dirMat->MultiplyPoint(viewup, viewup);
+		dirMat->MultiplyPoint(dirvec, dirvec);
+
+		camera->SetParallelScale(0.5f * dz);
+		cameraPositon[0] = center[0] + dirvec[0] * distance;
+		cameraPositon[1] = center[1] + dirvec[1] * distance;
+		cameraPositon[2] = center[2] + dirvec[2] * distance;
 		camera->SetPosition(cameraPositon);
 		camera->SetFocalPoint(center);
-		camera->SetViewUp(0, 0, 1);
+		camera->SetViewUp(viewup[0], viewup[1], viewup[2]);
 		break;
 	}
+}
+
+
+void SliceWidget::InitCamera2(double center[3], double scale)
+{
+	int extent[6]{ 0 };
+	m_pImgData->GetExtent(extent);
+	double sp[3];
+	m_pImgData->GetSpacing(sp);
+	double dx = (extent[1] - extent[0] + 1) * sp[0];
+	double dy = (extent[3] - extent[2] + 1) * sp[1];
+	double dz = (extent[5] - extent[4] + 1)*sp[2];
+	auto camera = m_pRenderer->GetActiveCamera();
+
+	camera->ParallelProjectionOn();
+	camera->SetViewAngle(30.0);
+
+	double distance = 1;
+
+	double focalPoint[3]{ 0 };
+	double cameraPositon[3]{ 0 };
+	//camera->GetParallelProjection();
+	camera->GetFocalPoint(focalPoint);
+
+	double viewup[4]{ 0,0,0,1 };
+	double dirvec[4]{ 0,0,0,1 };
+
+	switch (m_eSliceType)
+	{
+	case MPRA:
+		viewup[0] = 0;
+		viewup[1] = -1;
+		viewup[2] = 0;
+
+		dirvec[0] = 0;
+		dirvec[1] = 0;
+		dirvec[2] = -1;
+
+		camera->SetParallelScale(0.5f * dy);
+		cameraPositon[0] = center[0] + dirvec[0] * distance;
+		cameraPositon[1] = center[1] + dirvec[1] * distance;
+		cameraPositon[2] = center[2] + dirvec[2] * distance;
+		camera->SetPosition(cameraPositon);
+		camera->SetFocalPoint(center);
+		camera->SetViewUp(viewup[0], viewup[1], viewup[2]);
+		break;
+
+	case MPRC:
+		viewup[0] = 0;
+		viewup[1] = 0;
+		viewup[2] = 1;
+
+		dirvec[0] = 0;
+		dirvec[1] = 1;
+		dirvec[2] = 0;
+
+		camera->SetParallelScale(0.5f * dz);
+		cameraPositon[0] = center[0] + dirvec[0] * distance;
+		cameraPositon[1] = center[1] + dirvec[1] * distance;
+		cameraPositon[2] = center[2] + dirvec[2] * distance;
+		camera->SetPosition(cameraPositon);
+		camera->SetFocalPoint(center);
+		camera->SetViewUp(viewup[0], viewup[1], viewup[2]);
+		break;
+	case MPRS:
+		viewup[0] = 0;
+		viewup[1] = 0;
+		viewup[2] = 1;
+
+		dirvec[0] = 1;
+		dirvec[1] = 0;
+		dirvec[2] = 0;
+
+		camera->SetParallelScale(0.5f * dz);
+		cameraPositon[0] = center[0] + dirvec[0] * distance;
+		cameraPositon[1] = center[1] + dirvec[1] * distance;
+		cameraPositon[2] = center[2] + dirvec[2] * distance;
+		camera->SetPosition(cameraPositon);
+		camera->SetFocalPoint(center);
+		camera->SetViewUp(viewup[0], viewup[1], viewup[2]);
+		break;
+	}
+}
+
+void SliceWidget::GetSliceToWorldOrientation(vtkMatrix4x4 * sliceToWorld)
+{
+	if (sliceToWorld == nullptr)
+		return;
+	sliceToWorld->Identity();
+	switch (m_eSliceType)
+	{
+	case MPRA:
+		sliceToWorld->SetElement(0, 0, 1); sliceToWorld->SetElement(0, 1,0 ); sliceToWorld->SetElement(0, 2, 0);
+		sliceToWorld->SetElement(1, 0, 0); sliceToWorld->SetElement(1, 1,1 ); sliceToWorld->SetElement(1, 2,0 );
+		sliceToWorld->SetElement(2, 0,0 ); sliceToWorld->SetElement(2, 1, 0); sliceToWorld->SetElement(2, 2, 1);
+		break;
+
+	case MPRC:
+		sliceToWorld->SetElement(0, 0, 1); sliceToWorld->SetElement(0, 1, 0); sliceToWorld->SetElement(0, 2, 0);
+		sliceToWorld->SetElement(1, 0, 0); sliceToWorld->SetElement(1, 1, 0); sliceToWorld->SetElement(1, 2, -1);
+		sliceToWorld->SetElement(2, 0, 0); sliceToWorld->SetElement(2, 1, 1); sliceToWorld->SetElement(2, 2, 0);
+		break;
+	case MPRS:
+		sliceToWorld->SetElement(0, 0, 0); sliceToWorld->SetElement(0, 1, 0); sliceToWorld->SetElement(0, 2, 1);
+		sliceToWorld->SetElement(1, 0, 1); sliceToWorld->SetElement(1, 1, 0); sliceToWorld->SetElement(1, 2, 0);
+		sliceToWorld->SetElement(2, 0, 0); sliceToWorld->SetElement(2, 1, 1); sliceToWorld->SetElement(2, 2, 0);
+		break;
+	}
+}
+
+void SliceWidget::InitMRHeadCamera(double center[3], double scale)
+{
+	/*
+	0 1 0 220.574
+	0 0 -1 -17.1429
+	-1 0 0 203.431
+	0 0 0 1*/
+
+	int extent[6]{ 0 };
+	m_pImgData->GetExtent(extent);
+	double sp[3];
+	m_pImgData->GetSpacing(sp);
+	double dx = (extent[1] - extent[0] + 1) * sp[0];
+	double dy = (extent[3] - extent[2] + 1) * sp[1];
+	double dz = (extent[5] - extent[4] + 1)*sp[2];
+	auto camera = m_pRenderer->GetActiveCamera();
+
+	camera->ParallelProjectionOn();
+	camera->SetViewAngle(30.0);
+
+	double distance = 100;
+
+	double focalPoint[3]{ 0 };
+	double cameraPositon[3]{ 0 };
+	//camera->GetParallelProjection();
+	camera->GetFocalPoint(focalPoint);
+
+	double viewup[4]{ 0,0,0,1 };
+	double dirvec[4]{ 0,0,0,1 };
+
+	switch (m_eSliceType)
+	{
+	case MPRA:
+		viewup[0] = -1;
+		viewup[1] = 0;
+		viewup[2] = 0;
+
+		dirvec[0] = 0;
+		dirvec[1] = 1;
+		dirvec[2] = 0;
+
+		
+
+		camera->SetParallelScale(0.5f * dy);
+		cameraPositon[0] = center[0] + dirvec[0] * distance;
+		cameraPositon[1] = center[1] + dirvec[1] * distance;
+		cameraPositon[2] = center[2] + dirvec[2] * distance;
+
+		if (m_pThreeDWidget)
+		{
+			double c[3]{ 0,1,0 };
+			double c2[3]{ 1,0,0 };
+			AddSphere(m_pThreeDWidget->GetRenderer(), cameraPositon, c);
+			AddSphere(m_pThreeDWidget->GetRenderer(), center, c2);
+
+			AddSphere(m_pRenderer, cameraPositon, c);
+			AddSphere(m_pRenderer, center, c2);
+
+			m_pThreeDWidget->renderWindow()->Render();
+		}
+
+
+		camera->SetPosition(cameraPositon);
+		camera->SetFocalPoint(center);
+		camera->SetViewUp(viewup[0], viewup[1], viewup[2]);
+
+
+
+
+		
+		break;
+
+	case MPRC:
+		viewup[0] = 0;
+		viewup[1] = -1;
+		viewup[2] = 0;
+
+		dirvec[0] = 1;
+		dirvec[1] = 0;
+		dirvec[2] = 0;
+
+		camera->SetParallelScale(0.5f * dz);
+		cameraPositon[0] = center[0] + dirvec[0] * distance;
+		cameraPositon[1] = center[1] + dirvec[1] * distance;
+		cameraPositon[2] = center[2] + dirvec[2] * distance;
+		camera->SetPosition(cameraPositon);
+		camera->SetFocalPoint(center);
+		camera->SetViewUp(viewup[0], viewup[1], viewup[2]);
+		break;
+	case MPRS:
+		viewup[0] = 0;
+		viewup[1] = -1;
+		viewup[2] = 0;
+
+		dirvec[0] = 0;
+		dirvec[1] = 0;
+		dirvec[2] = -1;
+
+		camera->SetParallelScale(0.5f * dz);
+		cameraPositon[0] = center[0] + dirvec[0] * distance;
+		cameraPositon[1] = center[1] + dirvec[1] * distance;
+		cameraPositon[2] = center[2] + dirvec[2] * distance;
+		camera->SetPosition(cameraPositon);
+		camera->SetFocalPoint(center);
+		camera->SetViewUp(viewup[0], viewup[1], viewup[2]);
+		break;
+	}
+}
+
+void SliceWidget::AddSphere(vtkRenderer* renderer,double pos[3],double c[3], vtkMatrix4x4* userM4)
+{
+	vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
+	sphereSource->SetCenter(0, 0, 0);
+	sphereSource->SetRadius(0.5);
+	sphereSource->SetThetaResolution(40);
+	sphereSource->SetPhiResolution(40);
+	sphereSource->Update();
+
+	//create a mapper
+	vtkSmartPointer<vtkPolyDataMapper> sphereMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	sphereMapper->SetInputConnection(sphereSource->GetOutputPort());
+
+	// create an actor
+	vtkSmartPointer<vtkActor> sphereActor = vtkSmartPointer<vtkActor>::New();
+	sphereActor->SetMapper(sphereMapper);
+	sphereActor->GetProperty()->SetColor(c[0], c[1], c[2]);
+	sphereActor->SetScale(1.0, 1, 1);
+	if (userM4 == nullptr)
+	{
+		vtkNew<vtkMatrix4x4> mat;
+		mat->Identity();
+		mat->SetElement(0, 3, pos[0]);
+		mat->SetElement(1, 3, pos[1]);
+		mat->SetElement(2, 3, pos[2]);
+		sphereActor->SetUserMatrix(mat);
+	}
+	else
+	{
+		sphereActor->SetUserMatrix(userM4);
+	}
+	
+
+	renderer->AddActor(sphereActor);
 }

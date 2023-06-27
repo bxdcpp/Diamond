@@ -5,7 +5,8 @@ set(Qt5_DIR "C:/Qt/Qt5.12.4/5.12.4/msvc2017_64/lib/cmake/Qt5")
 set(VTK_DIR "S:/VTK-9.2.6-build") 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../bin)
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
-find_package(VTK REQUIRED)
+# find_package(VTK 9.2.6 REQUIRED)
+find_package(VTK  REQUIRED)
 
 set(header_files
     AppMainWindow.h
