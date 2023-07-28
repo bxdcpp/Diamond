@@ -3,6 +3,8 @@
 #include "ThreeDWidget.h"
 
 
+//QT include 
+#include <QMouseEvent>
 
 
 //VTK includes
@@ -91,8 +93,6 @@ public:
     vtkSmartPointer< vtkImageActor> m_pImageSliceActor = nullptr;
 	vtkSmartPointer< vtkImageActor> actorImageIn3D = nullptr;
 
-
-
 };
 
 SliceWidget::SliceWidget(QWidget *parent)
@@ -103,7 +103,7 @@ SliceWidget::SliceWidget(QWidget *parent)
 	m_pRenderer->SetBackground(0, 0.0, 0.0);
     renderWindow()->AddRenderer(m_pRenderer);
     
-  /*  vtkSmartPointer<vtkInteractorStyleImage> pImageStyle = vtkSmartPointer<vtkInteractorStyleImage>::New();
+    /*vtkSmartPointer<vtkInteractorStyleImage> pImageStyle = vtkSmartPointer<vtkInteractorStyleImage>::New();
     renderWindow()->GetInteractor()->SetInteractorStyle(pImageStyle);*/
     //vtkNew<vtkRenderWindowInteractor> WindowInteractor;
     //WindowInteractor->SetRenderWindow(renderWindow());
@@ -136,6 +136,107 @@ void SliceWidget::SetThreeDWidget(ThreeDWidget* widget)
 vtkSmartPointer<vtkRenderer> SliceWidget::GetRenderer()
 {
     return m_pRenderer;
+}
+
+void SliceWidget::mouseMoveEvent(QMouseEvent * event)
+{
+}
+
+void SliceWidget::mousePressEvent(QMouseEvent * event)
+{
+	
+
+}
+
+void SliceWidget::mouseReleaseEvent(QMouseEvent * event)
+{
+	if (event->button() == Qt::RightButton)
+	{
+		double worldPos[3]{0};
+		int displayPosition[2]{ 0 };
+		this->renderWindow()->GetInteractor()->GetEventPosition(displayPosition);
+		double devicePos[3]{ displayPosition[0] ,displayPosition[1] ,1 };
+		DisplayToWorld(displayPosition, worldPos);
+		//XYToLPS(devicePos, worldPos);
+		double c[3]{ 0,1,0 };
+		double c2[3]{ 1,0,0 };
+		AddSphere(m_pThreeDWidget->GetRenderer(), worldPos, c2);
+		AddSphere(m_pRenderer, worldPos, c2);
+		m_pThreeDWidget->renderWindow()->Render();
+		renderWindow()->Render();
+	}
+	
+}
+
+
+
+void SliceWidget::DisplayToWorld(int displayPos[2], double worldPos[3])
+{
+	// First compute the equivalent of this display point on the focal plane
+	double fp[4] = { 0.0 };
+	double tmp1[4] = { 0.0 };
+	double eventFPpos[4] = { 0.0 };
+
+	m_pRenderer->GetActiveCamera()->GetFocalPoint(fp);
+	fp[3] = 1.0;
+	m_pRenderer->SetWorldPoint(fp);
+	m_pRenderer->WorldToDisplay();
+	m_pRenderer->GetDisplayPoint(tmp1);
+
+	tmp1[0] = displayPos[0];
+	tmp1[1] = displayPos[1];
+
+	m_pRenderer->SetDisplayPoint(tmp1);
+	m_pRenderer->DisplayToWorld();
+
+	m_pRenderer->GetWorldPoint(eventFPpos);
+	// Copy the result
+	for (int i = 0; i < 3; i++)
+		worldPos[i] = eventFPpos[i];
+}
+
+void SliceWidget::XYToLPS(double displayPos[3], double worldPos[3])
+{
+	double axialElements[16] = {
+	 1, 0, 0, 0,
+	 0, -1, 0, 0,
+	 0, 0, -1, 0,
+	 0, 0, 0, 1
+	};
+	vtkNew<vtkMatrix4x4> xyToSlice;
+	vtkNew<vtkMatrix4x4> xyToLPSMat;
+	int FieldOfView[3]{ 0 };
+	double XYZOrigin[3]{ 0 };
+	m_pImgData->GetDimensions(FieldOfView);
+	double spacing[3]{ 1,1,1 };
+
+	for (int i = 0; i < 3; i++)
+	{
+		//spacing[i] = this->FieldOfView[i] / this->Dimensions[i];
+		xyToSlice->SetElement(i, i, spacing[i]);
+		xyToSlice->SetElement(i, 3, -FieldOfView[i] / 2. + XYZOrigin[i]);
+	}
+	xyToSlice->SetElement(2, 3, 0.);
+
+	vtkNew<vtkMatrix4x4> SliceToLPS;
+	SliceToLPS->Identity();
+	SliceToLPS->DeepCopy(axialElements);
+	SliceToLPS->SetElement(0, 3, m_center[0]);
+	SliceToLPS->SetElement(2, 3, m_center[0]);
+	SliceToLPS->SetElement(3, 3, m_center[0]);
+	SliceToLPS->Invert();
+	vtkMatrix4x4::Multiply4x4(SliceToLPS, xyToSlice.GetPointer(), xyToLPSMat.GetPointer());
+	double eventPositionXY[4] = {
+	static_cast<double>(displayPos[0]),
+	static_cast<double>(displayPos[1]),
+	0.0,
+	1.0 };
+	double world[4]{ 0 };
+	//memcpy(world, worldPos, sizeof(double) * 3);
+	xyToLPSMat->MultiplyPoint(eventPositionXY, world);
+	memcpy(worldPos, world, sizeof(double) * 3);
+
+	std::cout << "worldPos:" << worldPos[0] << ","<< worldPos[1] << ","<< worldPos[2] << std::endl;
 }
 
 void SliceWidget::InitReSliceMatrx()
@@ -223,9 +324,9 @@ void SliceWidget::InitReSliceMatrx()
     m_pImgData->GetCenter(center2);
     std::cout << center2[0] << " " << center2[1] << " "<<center2[2] << " " << std::endl;;
 
-    center[0] = origin[0] + spacing[0] * 0.5 * (extent[0] + extent[1]);
-    center[1] = origin[1] + spacing[1] * 0.5 * (extent[2] + extent[3]);
-    center[2] = origin[2] + spacing[2] * 0.5 * (extent[4] + extent[5]);
+	m_center[0] = center[0] = origin[0] + spacing[0] * 0.5 * (extent[0] + extent[1]);
+	m_center[1] = center[1] = origin[1] + spacing[1] * 0.5 * (extent[2] + extent[3]);
+	m_center[2] = center[2] = origin[2] + spacing[2] * 0.5 * (extent[4] + extent[5]);
 
     double yd = (extent[3] - extent[2] + 1) * spacing[1];
 
@@ -273,7 +374,7 @@ void SliceWidget::InitReSliceMatrx()
         {
             dirMatrx4->SetElement(i, j, pDirMatrx->GetElement(i, j));
         }
-        dirMatrx4->SetElement(i, 3, center[i]);
+        //dirMatrx4->SetElement(i, 3, center[i]);
     }
    //dirMatrx4->Invert();
 	std::cout << "dirrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr" << std::endl;
@@ -360,7 +461,7 @@ void SliceWidget::InitReSliceMatrx()
         m_pSliceImagePipeLine = std::make_shared<SliceImagePipeLine>(m_pImgData,m_presliceMatrix, sliceTransform,center);
 		double color[3]{ 0,0,1 };
 		double pos[3]{ 0 };
-		AddSphere(m_pRenderer, pos, color, m_presliceMatrix);
+		//AddSphere(m_pRenderer, pos, color, m_presliceMatrix);
     }
 
 
@@ -674,13 +775,13 @@ void SliceWidget::InitCamera(double center[3],double scale, vtkMatrix4x4* dirMat
 		{
 			double c[3]{ 0,1,0 };
 			double c2[3]{ 1,0,0 };
-			AddSphere(m_pThreeDWidget->GetRenderer(), cameraPositon, c);
+			/*AddSphere(m_pThreeDWidget->GetRenderer(), cameraPositon, c);
 			AddSphere(m_pThreeDWidget->GetRenderer(), center, c2);
 
-			/*AddSphere(m_pRenderer, cameraPositon, c);
-			AddSphere(m_pRenderer, center, c2);*/
+			AddSphere(m_pRenderer, cameraPositon, c);
+			AddSphere(m_pRenderer, center, c2);
 
-			m_pThreeDWidget->renderWindow()->Render();
+			m_pThreeDWidget->renderWindow()->Render();*/
 		}
 
 
@@ -950,7 +1051,7 @@ void SliceWidget::AddSphere(vtkRenderer* renderer,double pos[3],double c[3], vtk
 {
 	vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
 	sphereSource->SetCenter(0, 0, 0);
-	sphereSource->SetRadius(0.5);
+	sphereSource->SetRadius(3);
 	sphereSource->SetThetaResolution(40);
 	sphereSource->SetPhiResolution(40);
 	sphereSource->Update();

@@ -24,6 +24,19 @@ public:
     void SetThreeDWidget(ThreeDWidget* widget);
     vtkSmartPointer<vtkRenderer> GetRenderer();
 
+protected:
+
+
+	void mouseMoveEvent(QMouseEvent *event) override;
+
+	void mousePressEvent(QMouseEvent *event) override;
+
+	void mouseReleaseEvent(QMouseEvent *event) override;
+
+	void DisplayToWorld(int displayPos[2], double worldPos[3]);
+
+	void XYToLPS(double displayPos[3], double worldPos[3]);
+
 private:
     void InitReSliceMatrx();
     void ResetResliceMatrix();
